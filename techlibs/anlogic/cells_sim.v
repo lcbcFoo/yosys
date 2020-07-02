@@ -10,9 +10,6 @@ module AL_MAP_SEQ (
 	parameter SRMUX = "SR"; //SR/INV
 	parameter SRMODE = "SYNC"; //SYNC/ASYNC
 
-	wire clk_ce;
-	assign clk_ce = ce ? clk : 1'b0;
-
 	wire srmux;
 	generate
 		case (SRMUX)
@@ -38,40 +35,29 @@ module AL_MAP_SEQ (
 		begin
 			if (SRMODE == "ASYNC") 
 			begin
-				always @(posedge clk_ce, posedge srmux)
+				always @(posedge clk, posedge srmux)
 					if (srmux)
 						q <= regset;
-					else 
+					else if (ce)
 						q <= d;	
 			end 
 			else
 			begin
-				always @(posedge clk_ce)
+				always @(posedge clk)
 					if (srmux)
 						q <= regset;
-					else 
+					else if (ce)
 						q <= d;	
 			end
 		end
 		else
 		begin
 			// DFFMODE == "LATCH"
-			if (SRMODE == "ASYNC") 
-			begin
-				always @(clk_ce, srmux)
-					if (srmux)
-						q <= regset;
-					else 
-						q <= d;	
-			end 
-			else
-			begin
-				always @(clk_ce)
-					if (srmux)
-						q <= regset;
-					else 
-						q <= d;	
-			end
+			always @*
+				if (srmux)
+					q <= regset;
+				else if (clk & ce)
+					q <= d;	
 		end
     endgenerate
 endmodule
